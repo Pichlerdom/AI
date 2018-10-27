@@ -19,7 +19,22 @@ public class IDS implements Search
 	@Override
 	public Node search(Node start, Predicate<Node> endPredicate)
 	{
-		// TODO, assignment1
+		Node result = null;
+		
+		for(int i = 0; i <= limit; i++) {		
+			
+			DLDFS dldfs = new DLDFS(i);
+			
+			result = dldfs.search(start, endPredicate);	
+			
+			if(result != null) {	
+				return result;	
+			}
+			
+		}
+		
+		
+		
 		return null;
 	}
 
