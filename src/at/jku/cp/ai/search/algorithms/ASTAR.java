@@ -1,5 +1,6 @@
 package at.jku.cp.ai.search.algorithms;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -23,22 +24,18 @@ public class ASTAR implements Search
 		this.cost = cost;
 	}
 	
-	
 	@Override
 	public Node search(Node start, Predicate<Node> endPredicate)
 	{
 		StablePriorityQueue<Double, Node> queue = new StablePriorityQueue<>();
 		
-		StackWithFastContains<Double> openListDouble = new StackWithFastContains<>();
-		StackWithFastContains<Node> openListNodes = new StackWithFastContains<>();
+		HashMap<Integer, Double> openList = new HashMap<>();
 		
-		StackWithFastContains<Double> closedListDouble = new StackWithFastContains<>();
-		StackWithFastContains<Node> closedListNodes = new StackWithFastContains<>();
+		HashMap<Integer, Double> closedList = new HashMap<>();
 		
 		Pair<Double,Node> curr = new Pair<Double, Node>(heuristic.apply(start), start);
 		
-		openListDouble.push(curr.f);
-		openListNodes.push(curr.s);
+		openList.put(curr.s.hashCode(), curr.f);
 		
 		do {
 			if(endPredicate.test(curr.s)){
@@ -48,40 +45,39 @@ public class ASTAR implements Search
 			List<Node> adjacentNodes = curr.s.adjacent();
 			for(Node node : adjacentNodes) {
 				
-				Pair<Double, Node> help = new Pair<Double, Node>(heuristic.apply(node) 
-						+ (curr.f - heuristic.apply(node.parent())) 
-						+ cost.apply(node), node);
-				
-				/*if(openListNodes.contains(help.s) && openListDouble.get(openListNodes.indexOf(help.s)) == help.f) {
-					continue;
+				double g;
+				if(closedList.get(curr.s.hashCode()) == null) {
+				    g = cost.apply(node);
 				}
-				if(closedListNodes.contains(help.s) && closedListDouble.get(closedListNodes.indexOf(help.s)) == help.f) {
-					continue;
-				}*/
+				else {
+					g = cost.apply(node) + closedList.get(curr.s.hashCode());
+				}
 				
-				if(openListNodes.contains(help.s)) {
+				double h = heuristic.apply(node);
+				
+				Pair<Double, Node> newNode = new Pair<Double, Node>(h + g, node);
+				
+				if(openList.containsKey(node.hashCode())) {
 					
-					if(openListDouble.get(openListNodes.indexOf(help.s)) < help.f) {
+					if(openList.get(node.hashCode()) < newNode.f) {
+						continue;
+					}
+				}
+			
+				if(closedList.containsKey(node.hashCode())) {
+					if(closedList.get(node.hashCode()) < newNode.f) {
 						continue;
 					}
 					else {
-						openListDouble.set(openListNodes.indexOf(help.s), help.f);;
+						closedList.put(node.hashCode(), newNode.f);
 					}
 				}
-				
-				if(closedListNodes.contains(help.s)) {
-					if(closedListDouble.get(closedListNodes.indexOf(help.s)) < help.f) {
-						continue;
-					}					
-				}
 					
-				queue.add(help);		
-				openListDouble.push(help.f);
-				openListNodes.push(help.s);
+				queue.add(newNode);		
+				openList.put(newNode.s.hashCode(), newNode.f);
 			}
 			
-			closedListDouble.push(curr.f);
-			closedListNodes.push(curr.s);
+			closedList.put(curr.s.hashCode(), curr.f);
 			
 			curr = queue.remove();	
 			
